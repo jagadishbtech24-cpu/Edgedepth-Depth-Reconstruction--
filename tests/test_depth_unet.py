@@ -1,5 +1,6 @@
 import os
 import unittest
+from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -14,6 +15,7 @@ from src.models.depth_unet import (
     prepare_depth_unet_input,
     run_depth_unet_inference,
     scatter_sparse_depth,
+    _safe_checkpoint_load,
 )
 from src.utils.dataset import load_depth_map, load_rgb_image
 from src.utils.degradations import downsample_depth
@@ -24,6 +26,36 @@ SAMPLE_PREFIX = os.path.join(ROOT, "data", "samples", "nyuv2_nyu_0000")
 
 
 class DepthUNetTests(unittest.TestCase):
+    def test_checkpoint_loader_allowlists_numpy_core_scalar_pickle_name(self):
+        safe_globals = []
+
+        def capture_safe_globals(values):
+            safe_globals.extend(values)
+            return nullcontext()
+
+        with (
+            patch(
+                "src.models.depth_unet.torch.serialization.safe_globals",
+                side_effect=capture_safe_globals,
+            ),
+            patch(
+                "src.models.depth_unet.torch.load",
+                return_value={},
+            ) as load_checkpoint,
+        ):
+            _safe_checkpoint_load("checkpoint.pth", device="cpu")
+
+        numpy_multiarray = __import__(
+            "numpy.core.multiarray", fromlist=["scalar"]
+        )
+        self.assertIn(
+            (numpy_multiarray.scalar, "numpy._core.multiarray.scalar"),
+            safe_globals,
+        )
+        load_checkpoint.assert_called_once_with(
+            "checkpoint.pth", map_location="cpu", weights_only=True
+        )
+
     def test_double_conv_uses_bias_free_convolutions_and_checkpoint_names(self):
         model = DepthUNet()
         self.assertIn("enc1.block.0.weight", model.state_dict())

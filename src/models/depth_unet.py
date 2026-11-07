@@ -83,6 +83,7 @@ def _safe_checkpoint_load(path: str, device: str) -> dict:
     numpy_multiarray = import_module("numpy.core.multiarray")
     safe_globals = [
         numpy_multiarray.scalar,
+        (numpy_multiarray.scalar, "numpy._core.multiarray.scalar"),
         np.dtype,
         type(np.dtype(np.float64)),
         type(np.dtype(np.int64)),
