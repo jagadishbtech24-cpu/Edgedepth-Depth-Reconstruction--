@@ -508,7 +508,7 @@ def render_evaluation(result):
         x_label="Reconstruction method",
         y_label="Error (m)",
         color=["#5bc8c2", "#7798a2", "#c89d68"],
-        sort="ascending",
+        sort="RMSE (m)",
         alt="RMSE, MAE, and edge RMSE by reconstruction method",
     )
     st.dataframe(
