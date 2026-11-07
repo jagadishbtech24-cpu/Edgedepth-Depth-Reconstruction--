@@ -281,16 +281,6 @@ P4_CV_Hack/
 
 ---
 
-## 🎤 3-Minute Demo & Viva Cheat Sheet
-
-1. **Introduction (30s):** Show the problem in the EdgeDepth dashboard. Select Bicubic at 8× and point out the blurry intermediate ramp between foreground and background.
-2. **Classical vs Texture-Copying (45s):** Open Boundary analysis and compare the guided result with the input RGB edges to discuss texture transfer.
-3. **Hybrid Refinement (45s):** Enable anti-texture suppression and adjust boundary refinement. Compare the hybrid prediction and affinity visualization without assuming a guaranteed improvement.
-4. **3D & Evaluation (40s):** Rotate the interactive depth surface under 3D inspection, then compare metrics under Evaluation. Interpret results against the displayed reference and avoid claiming a universal best method.
-5. **Failure Case (20s):** Explain transparent glass or specular mirrors, where RGB cues contradict physical distance, and show our fallback inpainting mechanism.
-
----
-
 ## 👥 Team Details & USNs
 
 **Team No.: T79**
