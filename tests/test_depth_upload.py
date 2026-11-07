@@ -22,6 +22,19 @@ def encode_npy(array):
     return encoded.getvalue()
 
 
+def encode_npy_header(shape, dtype=np.float32):
+    encoded = io.BytesIO()
+    np.lib.format.write_array_header_1_0(
+        encoded,
+        {
+            "descr": np.dtype(dtype).str,
+            "fortran_order": False,
+            "shape": shape,
+        },
+    )
+    return encoded.getvalue()
+
+
 def encode_rgb(size=(64, 48)):
     encoded = io.BytesIO()
     Image.new("RGB", size, color=(30, 80, 120)).save(encoded, format="PNG")
@@ -81,6 +94,13 @@ def test_depth_upload_rejects_non_numeric_arrays():
 
 def test_depth_upload_rejects_array_above_cloud_processing_limit():
     data = encode_npy(np.ones((1, MAX_IMAGE_PIXELS + 1), dtype=np.float32))
+
+    with pytest.raises(ValueError, match="640×480"):
+        read_depth_upload(data, "oversized.npy")
+
+
+def test_depth_upload_rejects_oversized_npy_header_before_array_allocation():
+    data = encode_npy_header((MAX_IMAGE_PIXELS + 1, 1))
 
     with pytest.raises(ValueError, match="640×480"):
         read_depth_upload(data, "oversized.npy")

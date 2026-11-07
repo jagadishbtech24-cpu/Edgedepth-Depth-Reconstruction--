@@ -1,6 +1,7 @@
 """Streamlit dashboard for EdgeDepth reconstruction and evaluation."""
 
 import io
+import math
 from pathlib import Path
 
 import cv2
@@ -81,8 +82,27 @@ def read_rgb_upload(data: bytes, filename: str) -> np.ndarray:
 def read_depth_upload(data: bytes, filename: str) -> np.ndarray:
     suffix = Path(filename).suffix.lower()
     if suffix == ".npy" or data.startswith(b"\x93NUMPY"):
+        encoded = io.BytesIO(data)
         try:
-            depth = np.load(io.BytesIO(data), allow_pickle=False)
+            version = np.lib.format.read_magic(encoded)
+            if version == (1, 0):
+                shape, _, dtype = np.lib.format.read_array_header_1_0(encoded)
+            elif version in {(2, 0), (3, 0)}:
+                shape, _, dtype = np.lib.format.read_array_header_2_0(encoded)
+            else:
+                raise ValueError(f"Unsupported NPY version {version}.")
+        except (ValueError, OSError, EOFError) as exc:
+            raise ValueError(f"Could not decode depth array '{filename}'.") from exc
+        if dtype.kind not in "iuf":
+            raise ValueError("Depth data must contain real numeric values.")
+        if math.prod(shape) > MAX_IMAGE_PIXELS:
+            raise ValueError(
+                "Depth map exceeds the 640×480 (307,200-pixel) processing limit. "
+                "Resize the registered RGB and depth images consistently."
+            )
+        try:
+            encoded.seek(0)
+            depth = np.load(encoded, allow_pickle=False)
         except (ValueError, OSError, EOFError) as exc:
             raise ValueError(f"Could not decode depth array '{filename}'.") from exc
     else:
