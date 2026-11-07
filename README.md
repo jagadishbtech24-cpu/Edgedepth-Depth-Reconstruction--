@@ -1,7 +1,7 @@
 # EdgeDepth: Edge-Preserving Depth Map Upsampling and Refinement
-### Problem Statement 4 (ProbID - P4) | Team T79
+### Problem Statement 4 (ProbID - P4) | Team 01
 
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.6+-ee4c2c.svg)](https://pytorch.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -110,12 +110,9 @@ For the architectural diagram and evaluation notes, please refer to:
    cd Edgedepth-Depth-Reconstruction
    ```
 
-2. **Create a Python 3.12 environment and install pinned dependencies:**
+2. **Install dependencies:**
    ```powershell
-   py -3.12 -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   python -m pip install --upgrade pip
-   python -m pip install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 3. **Start the Streamlit dashboard:**
@@ -123,11 +120,6 @@ For the architectural diagram and evaluation notes, please refer to:
    python -m streamlit run app.py
    ```
    Open the local URL printed by Streamlit (normally `http://localhost:8501`).
-
-Custom RGB and depth uploads must be registered. Each image may be at most 640×480
-(307,200 pixels) and 64 MB. Resize RGB and depth consistently before upload; sparse or
-low-resolution depth may use a smaller spatial grid. 16-bit PNG/TIFF depth is read in
-millimetres, and NPY depth arrays are read in metres.
 
 4. **Train EdgeGuideNet from scratch (PowerShell):**
    ```powershell
@@ -200,9 +192,6 @@ If you use it, first adapt/convert its paired RGB-depth files and verify depth u
 The application is a single Streamlit app. It can be deployed from this GitHub
 repository using Streamlit Community Cloud: choose the repository and branch, set the
 app file to `app.py`, and deploy. The application runs entirely as a Streamlit app.
-In **Advanced settings**, choose **Python 3.12** to match the tested dependency set.
-The pinned CPU-only PyTorch wheel avoids installing CUDA libraries on the Cloud CPU
-runtime.
 
 The free hosting tier has limited CPU, memory, and storage. This app loads PyTorch and
 two model checkpoints, so verify that the service has enough resources for inference.
@@ -281,12 +270,12 @@ P4_CV_Hack/
 
 ---
 
-## 👥 Team Details & USNs
+## 🎤 3-Minute Demo & Viva Cheat Sheet
 
-**Team No.: T79**
+1. **Introduction (30s):** Show the problem in the EdgeDepth dashboard. Select Bicubic at 8× and point out the blurry intermediate ramp between foreground and background.
+2. **Classical vs Texture-Copying (45s):** Open Boundary analysis and compare the guided result with the input RGB edges to discuss texture transfer.
+3. **Hybrid Refinement (45s):** Enable anti-texture suppression and adjust boundary refinement. Compare the hybrid prediction and affinity visualization without assuming a guaranteed improvement.
+4. **3D & Evaluation (40s):** Rotate the interactive depth surface under 3D inspection, then compare metrics under Evaluation. Interpret results against the displayed reference and avoid claiming a universal best method.
+5. **Failure Case (20s):** Explain transparent glass or specular mirrors, where RGB cues contradict physical distance, and show our fallback inpainting mechanism.
 
-| Team member | USN |
-|---|---|
-| Dhanush N | 1RUA24CSE0123 |
-| Jagadish | 1RUA24CSE0175 |
-| Jayant Kumar | 1RUA24CSE0182 |
+---
