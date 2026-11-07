@@ -2,10 +2,8 @@
 ### Problem Statement 4 (ProbID - P4) | Team 01
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.8+-ee4c2c.svg)](https://pytorch.org/)
-[![React](https://img.shields.io/badge/React-18-149ECA.svg)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688.svg)](https://fastapi.tiangolo.com/)
-[![Render](https://img.shields.io/badge/Render-API-46E3B7.svg)](https://render.com/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.6+-ee4c2c.svg)](https://pytorch.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -117,20 +115,13 @@ For the architectural diagram and evaluation notes, please refer to:
    pip install -r requirements.txt
    ```
 
-3. **Start the FastAPI backend** in one terminal:
+3. **Start the Streamlit dashboard:**
    ```powershell
-   python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+   python -m streamlit run app.py
    ```
-4. **Start the React dashboard** in another terminal:
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   Open the Vite URL printed in the terminal (normally `http://127.0.0.1:5173`).
-   FastAPI's interactive endpoint documentation is at `http://127.0.0.1:8000/docs`.
+   Open the local URL printed by Streamlit (normally `http://localhost:8501`).
 
-5. **Train EdgeGuideNet from scratch (PowerShell):**
+4. **Train EdgeGuideNet from scratch (PowerShell):**
    ```powershell
    python train.py --epochs 10 --batch-size 8 --patch-size 64 --from-scratch --checkpoint models\edge_guide_net_nyu_v2.pt
    ```
@@ -139,17 +130,17 @@ For the architectural diagram and evaluation notes, please refer to:
    checkpoint selection; the official NYU validation split is never used for training.
    Smaller runs are available with `--samples-per-epoch N`.
 
-6. **Evaluate that exact trained checkpoint:**
+5. **Evaluate that exact trained checkpoint:**
    ```powershell
    python run_benchmark.py --checkpoint models\edge_guide_net_nyu_v2.pt --max-scenes 8 --repeats 1 --output-md eval_nyu_trained.md --output-csv eval_nyu_trained.csv
    ```
    The report compares all methods on the same scenes at 2x/4x/8x and saves per-scene
    rows. Increase `--max-scenes` and `--repeats` for a longer evaluation.
 
-7. **Run the dashboard with the available EdgeGuideNet checkpoint:**
+6. **Run the dashboard with the available EdgeGuideNet checkpoint:**
    ```powershell
    Remove-Item Env:EDGEDEPTH_CHECKPOINT -ErrorAction SilentlyContinue
-   python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+   python -m streamlit run app.py
    ```
    The project uses `models\edge_guide_net.pt` by default, resolved relative to the project
    files. Only set `EDGEDEPTH_CHECKPOINT` after training or copying a different EdgeGuideNet
@@ -196,30 +187,17 @@ If you use it, first adapt/convert its paired RGB-depth files and verify depth u
 
 ---
 
-### Public deployment (Vercel + Render)
+### Public deployment (Streamlit Community Cloud)
 
-The React dashboard can be hosted on Vercel and use the FastAPI inference API on
-Render. A starter [Render Blueprint](render.yaml) is included.
+The application is a single Streamlit app. It can be deployed from this GitHub
+repository using Streamlit Community Cloud: choose the repository and branch, set the
+app file to `app.py`, and deploy. The application runs entirely as a Streamlit app.
 
-1. **Deploy the backend to Render.** Create a new Blueprint from this repository and
-   select the free plan. Keep the two model checkpoints in the repository; Git LFS
-   rules are in `.gitattributes`. Set `FRONTEND_ORIGINS` to your Vercel site origin
-   (for example, `https://your-site.vercel.app`) in Render after creating the frontend.
-2. **Deploy the frontend to Vercel.** Import the same GitHub repository, set the Root
-   Directory to `frontend`, the build command to `npm run build`, and the output
-   directory to `dist`. Set `VITE_API_URL` to the Render service URL, for example
-   `https://edgedepth-api.onrender.com`, and redeploy.
-3. If Render is deployed after setting the Vercel origin, update
-   `FRONTEND_ORIGINS` with the exact Vercel URL and redeploy the backend. For local
-   development, leave `VITE_API_URL` unset; Vite continues to proxy API requests to
-   the local FastAPI server.
-
-**Free-tier resource warning:** Render's free web services have limited memory and
-CPU, sleep when idle, and may cold-start on the next request. This project loads
-PyTorch and two distinct model checkpoints, so the free instance may run out of memory
-or be too slow for inference. The Blueprint uses CPU-only PyTorch and does not
-configure paid hardware. Check the service logs and actual memory usage after deploy;
-do not upgrade to a paid plan without deciding to do so.
+The free hosting tier has limited CPU, memory, and storage. This app loads PyTorch and
+two model checkpoints, so verify that the service has enough resources for inference.
+Keep the checkpoints available in the repository or configure an appropriate external
+artifact source before deployment. Do not select or enable a paid hosting plan unless
+you decide to do so.
 
 ---
 
@@ -279,10 +257,7 @@ P4_CV_Hack/
 │   └── samples/                    # Quick-access curated benchmark pairs (NYUv2, Middlebury, KITTI)
 ├── models/edge_guide_net.pt        # Bundled EdgeGuideNet checkpoint used by default
 ├── models/best_depth_model.pth    # Supplied Kaggle DepthUNet checkpoint (unchanged)
-├── api/main.py                     # FastAPI API and local static frontend host
-├── render.yaml                     # Render FastAPI service configuration
-├── frontend/                       # React + Vite dashboard
-├── frontend/src/services/backend.js # Local / hosted FastAPI client
+├── app.py                          # Streamlit dashboard
 ├── src/services/reconstruction.py  # UI-independent reconstruction service
 ├── run_benchmark.py                # Automated evaluation script
 ├── train.py                        # Self-contained training script

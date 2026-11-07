@@ -2,7 +2,7 @@ import io
 
 import numpy as np
 
-from api.main import _read_depth_upload
+from app import read_depth_upload
 
 
 def test_depth_upload_detects_numpy_content_without_filename_extension():
@@ -10,6 +10,6 @@ def test_depth_upload_detects_numpy_content_without_filename_extension():
     encoded = io.BytesIO()
     np.save(encoded, expected, allow_pickle=False)
 
-    actual = _read_depth_upload(encoded.getvalue(), "blob")
+    actual = read_depth_upload(encoded.getvalue(), "blob")
 
     np.testing.assert_array_equal(actual, expected)

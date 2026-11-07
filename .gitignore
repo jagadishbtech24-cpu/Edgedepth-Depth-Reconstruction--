@@ -11,8 +11,6 @@ htmlcov/
 Thumbs.db
 .idea/
 .vscode/
-frontend/node_modules/
-frontend/dist/
 data/nyu_depth_v2/
 data/temp_downloads/
 data/nyu-depth-png.zip
