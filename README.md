@@ -1,7 +1,7 @@
 # EdgeDepth: Edge-Preserving Depth Map Upsampling and Refinement
 ### Problem Statement 4 (ProbID - P4) | Team 01
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.6+-ee4c2c.svg)](https://pytorch.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -110,9 +110,12 @@ For the architectural diagram and evaluation notes, please refer to:
    cd Edgedepth-Depth-Reconstruction
    ```
 
-2. **Install dependencies:**
+2. **Create a Python 3.12 environment and install pinned dependencies:**
    ```powershell
-   pip install -r requirements.txt
+   py -3.12 -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements.txt
    ```
 
 3. **Start the Streamlit dashboard:**
@@ -120,6 +123,11 @@ For the architectural diagram and evaluation notes, please refer to:
    python -m streamlit run app.py
    ```
    Open the local URL printed by Streamlit (normally `http://localhost:8501`).
+
+Custom RGB and depth uploads must be registered. Each image may be at most 640×480
+(307,200 pixels) and 64 MB. Resize RGB and depth consistently before upload; sparse or
+low-resolution depth may use a smaller spatial grid. 16-bit PNG/TIFF depth is read in
+millimetres, and NPY depth arrays are read in metres.
 
 4. **Train EdgeGuideNet from scratch (PowerShell):**
    ```powershell
@@ -192,6 +200,9 @@ If you use it, first adapt/convert its paired RGB-depth files and verify depth u
 The application is a single Streamlit app. It can be deployed from this GitHub
 repository using Streamlit Community Cloud: choose the repository and branch, set the
 app file to `app.py`, and deploy. The application runs entirely as a Streamlit app.
+In **Advanced settings**, choose **Python 3.12** to match the tested dependency set.
+The pinned CPU-only PyTorch wheel avoids installing CUDA libraries on the Cloud CPU
+runtime.
 
 The free hosting tier has limited CPU, memory, and storage. This app loads PyTorch and
 two model checkpoints, so verify that the service has enough resources for inference.

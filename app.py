@@ -28,7 +28,7 @@ from src.utils.visualization import (
 
 ROOT = Path(__file__).resolve().parent
 MAX_UPLOAD_BYTES = 64 * 1024 * 1024
-MAX_IMAGE_PIXELS = 16_000_000
+MAX_IMAGE_PIXELS = 640 * 480
 METHODS = (
     "Nearest",
     "Bilinear",
@@ -59,13 +59,23 @@ def scene_catalog(source: str) -> dict:
 
 def read_rgb_upload(data: bytes, filename: str) -> np.ndarray:
     try:
-        with Image.open(io.BytesIO(data)) as image:
-            image = image.convert("RGB")
-            if image.width * image.height > MAX_IMAGE_PIXELS:
-                raise ValueError("RGB image exceeds the 16-megapixel upload limit.")
-            return np.asarray(image, dtype=np.float32) / 255.0
-    except (UnidentifiedImageError, OSError) as exc:
+        image = Image.open(io.BytesIO(data))
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise ValueError(f"Could not decode RGB image '{filename}'.") from exc
+
+    with image:
+        if image.format not in {"PNG", "JPEG"}:
+            raise ValueError("RGB image must be PNG or JPEG.")
+        if image.width * image.height > MAX_IMAGE_PIXELS:
+            raise ValueError(
+                "RGB image exceeds the 640×480 (307,200-pixel) processing limit. "
+                "Resize the registered RGB and depth images to the same dimensions."
+            )
+        try:
+            image.load()
+            return np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+        except (OSError, ValueError, Image.DecompressionBombError) as exc:
+            raise ValueError(f"Could not decode RGB image '{filename}'.") from exc
 
 
 def read_depth_upload(data: bytes, filename: str) -> np.ndarray:
@@ -73,10 +83,15 @@ def read_depth_upload(data: bytes, filename: str) -> np.ndarray:
     if suffix == ".npy" or data.startswith(b"\x93NUMPY"):
         try:
             depth = np.load(io.BytesIO(data), allow_pickle=False)
-        except (ValueError, OSError) as exc:
+        except (ValueError, OSError, EOFError) as exc:
             raise ValueError(f"Could not decode depth array '{filename}'.") from exc
     else:
-        depth = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        try:
+            depth = cv2.imdecode(
+                np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_UNCHANGED
+            )
+        except cv2.error as exc:
+            raise ValueError(f"Could not decode depth image '{filename}'.") from exc
         if depth is None:
             raise ValueError(f"Could not decode depth image '{filename}'.")
         if depth.ndim == 3:
@@ -86,11 +101,22 @@ def read_depth_upload(data: bytes, filename: str) -> np.ndarray:
         elif depth.dtype == np.uint8:
             depth = depth.astype(np.float32) / 255.0 * 5.0
 
-    depth = np.asarray(depth, dtype=np.float32).squeeze()
+    depth = np.asarray(depth)
+    if depth.ndim > 2:
+        depth = depth.squeeze()
     if depth.ndim != 2:
         raise ValueError(f"Depth data must be 2D; got shape {depth.shape}.")
     if depth.size > MAX_IMAGE_PIXELS:
-        raise ValueError("Depth map exceeds the 16-megapixel upload limit.")
+        raise ValueError(
+            "Depth map exceeds the 640×480 (307,200-pixel) processing limit. "
+            "Resize the registered RGB and depth images consistently."
+        )
+    if depth.dtype.kind not in "iuf":
+        raise ValueError("Depth data must contain real numeric values.")
+    try:
+        depth = depth.astype(np.float32, copy=False)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"Could not convert depth data in '{filename}' to float32.") from exc
     return np.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0)
 
 
@@ -214,7 +240,20 @@ def run_input(source, scene_key, files, sensor_is_low_resolution, settings):
             reference = input_depth
         scene_name = "Custom RGB-D upload"
 
-    if reference is not None and not sensor_is_low_resolution:
+    if input_depth.size > MAX_IMAGE_PIXELS:
+        raise ValueError(
+            "Depth input exceeds the 640×480 (307,200-pixel) processing limit."
+        )
+    if (
+        source == "upload"
+        and not sensor_is_low_resolution
+        and input_depth.shape != rgb.shape[:2]
+    ):
+        raise ValueError(
+            "RGB and depth dimensions must match unless the depth input is marked "
+            "sparse or low-resolution."
+        )
+    if reference is not None:
         if reference.shape != rgb.shape[:2]:
             raise ValueError(
                 f"Reference depth shape {reference.shape} must match RGB shape "
@@ -291,13 +330,17 @@ def render_sidebar():
                 rgb_file = st.file_uploader(
                     "Registered RGB image",
                     type=["png", "jpg", "jpeg"],
-                    help="Use an RGB image aligned with the supplied depth map.",
+                    help=(
+                        "Use an RGB image aligned with the supplied depth map. "
+                        "Maximum 640×480 (307,200 pixels) and 64 MB."
+                    ),
                 )
                 depth_file = st.file_uploader(
                     "Depth map",
                     type=["png", "tif", "tiff", "npy"],
                     help="16-bit PNG/TIFF values are interpreted as millimetres. "
-                    "NumPy arrays are interpreted in metres.",
+                    "NumPy arrays are interpreted in metres. Maximum 640×480 "
+                    "(307,200 pixels) and 64 MB.",
                 )
                 sensor_is_low_resolution = st.checkbox(
                     "Depth is sparse or low-resolution sensor input",
@@ -375,12 +418,21 @@ def render_sidebar():
                 st.session_state.pop("run_error", None)
             except (
                 ValueError,
+                TypeError,
+                OverflowError,
+                EOFError,
                 FileNotFoundError,
                 OSError,
                 cv2.error,
                 RuntimeError,
             ) as exc:
                 st.session_state["run_error"] = str(exc)
+                st.session_state.pop("result_bundle", None)
+            except MemoryError:
+                st.session_state["run_error"] = (
+                    "The app ran out of memory while processing these inputs. "
+                    "Resize the registered RGB and depth images to 640×480 or smaller."
+                )
                 st.session_state.pop("result_bundle", None)
 
         st.divider()
