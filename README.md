@@ -1,5 +1,5 @@
 # EdgeDepth: Edge-Preserving Depth Map Upsampling and Refinement
-### Problem Statement 4 (ProbID - P4) | Team 01
+### Problem Statement 4 (ProbID - P4) | Team T79
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.6+-ee4c2c.svg)](https://pytorch.org/)
@@ -293,8 +293,10 @@ P4_CV_Hack/
 
 ## 👥 Team Details & USNs
 
-First line of `eval_P4_T79.md`:
-```
-1MS22CS001, 1MS22CS002, 1MS22CS003, 1MS22CS004
-```
-*(Replace placeholders with team member USNs prior to submission).*
+**Team No.: T79**
+
+| Team member | USN |
+|---|---|
+| Dhanush N | 1RUA24CSE0123 |
+| Jagadish | 1RUA24CSE0175 |
+| Jayant Kumar | 1RUA24CSE0182 |
