@@ -1,5 +1,7 @@
 import os
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -72,7 +74,8 @@ class DepthUNetTests(unittest.TestCase):
         "Supplied DepthUNet checkpoint and NYU sample are required.",
     )
     def test_checkpoint_strict_load_and_real_sample_inference(self):
-        model = load_depth_unet(device="cpu")
+        with patch("src.models.depth_unet.np._core", SimpleNamespace(), create=True):
+            model = load_depth_unet(device="cpu")
         self.assertIsInstance(model, torch.nn.DataParallel)
 
         rgb = load_rgb_image(SAMPLE_PREFIX + "_rgb.png")

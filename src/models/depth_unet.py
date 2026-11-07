@@ -1,6 +1,7 @@
 """Checkpoint-compatible DepthUNet reconstructed from the supplied state dict."""
 
 import os
+from importlib import import_module
 
 import cv2
 import numpy as np
@@ -79,11 +80,9 @@ def _safe_checkpoint_load(path: str, device: str) -> dict:
         raise RuntimeError(
             "Safely loading this DepthUNet checkpoint requires PyTorch 2.6 or newer."
         )
-    numpy_core = getattr(np, "_core", None)
-    if numpy_core is None:
-        numpy_core = np.core
+    numpy_multiarray = import_module("numpy.core.multiarray")
     safe_globals = [
-        numpy_core.multiarray.scalar,
+        numpy_multiarray.scalar,
         np.dtype,
         type(np.dtype(np.float64)),
         type(np.dtype(np.int64)),
