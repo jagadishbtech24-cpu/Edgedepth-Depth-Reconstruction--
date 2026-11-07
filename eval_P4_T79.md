@@ -1,4 +1,9 @@
-1MS22CS001, 1MS22CS002, 1MS22CS003, 1MS22CS004
+**TEAM NO.: T79**
+
+**USN -**
+- Dhanush N — 1RUA24CSE0123
+- Jagadish — 1RUA24CSE0175
+- Jayant Kumar — 1RUA24CSE0182
 
 # EdgeDepth held-out evaluation
 
